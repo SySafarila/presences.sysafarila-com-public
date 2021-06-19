@@ -1,0 +1,13 @@
+.customScroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.customScroll::-webkit-scrollbar-thumb {
+  /* background: rgb(201, 201, 201); */
+  background: transparent;
+}
+
+.customScroll:hover::-webkit-scrollbar-thumb {
+  background: rgb(201, 201, 201);
+  /* background: transparent; */
+}

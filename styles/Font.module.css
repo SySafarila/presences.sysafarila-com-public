@@ -1,0 +1,20 @@
+/* Noto Sans JP */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap");
+
+/* caveat */
+@import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
+
+/* fraunces */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces&display=swap");
+
+.noto-sans-jp {
+  font-family: "Noto Sans JP", sans-serif;
+}
+
+.caveat {
+  font-family: "Caveat", cursive;
+}
+
+.fraunces {
+  font-family: "Fraunces", serif;
+}

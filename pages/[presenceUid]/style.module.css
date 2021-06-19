@@ -1,0 +1,14 @@
+.custom {
+  border-left: solid 0px;
+  padding-left: 0rem;
+  transition: all;
+  transition-duration: 250ms;
+  transition-timing-function: ease-in-out;
+}
+
+.custom:hover {
+  /* background-color: salmon; */
+  border-left: solid 4px #2196f3;
+  padding-left: 0.5rem;
+  background: #d7edff;
+}
