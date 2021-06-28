@@ -12,11 +12,13 @@ import { AuthState, UserState } from "../../components/recoil/Store";
 import Css from "../../styles/CustomCss.module.css";
 import Loading from "../../components/middleware/Loading";
 import Swal from "sweetalert2";
-import Faker from "faker";
-import Style from "./style.module.css";
+// import Faker from "faker";
+// import Style from "./style.module.css";
 import RealtimeMoment from "../../components/presenceId/RealtimeMoment";
+import Link from "next/link";
+import LogsController from "../../components/LogsController";
 
-const presenceUid2 = () => {
+const ShowPresences = () => {
   const router = useRouter();
   const { presenceUid, p } = router.query;
   const [presence, setPresence] = useState({});
@@ -36,33 +38,98 @@ const presenceUid2 = () => {
   const [buttonClicked, setButtonClicked] = useState(true);
   const [userCheckInStatus, setUserCheckinStatus] = useState(false);
   const [getStudentsStatus, setGetStudentsStatus] = useState(undefined);
+  const [option, setOption] = useState(false);
   const activeUser = useRecoilValue(UserState);
   const auth = useRecoilValue(AuthState);
 
   const { register, handleSubmit, watch, errors } = useForm();
+  const logs = LogsController();
 
-  // getPresenceData() & getStudents() when presenceUid isn't undifined
+  // getPresenceData() if presenceUid isn't undifined
   useEffect(() => {
     if (presenceUid != undefined) {
       getPresenceData();
-      // getStudents();
     }
   }, [router]);
 
-  // re-run getStudents() when activeUser != undifined
+  // getStudents if router is ready & authenticated
   useEffect(() => {
-    if (activeUser != undefined && getStudentsStatus == undefined) {
-      getStudents();
-    }
-  }, [activeUser]);
+    if (router.isReady && auth) {
+      // console.count("getStudents()");
+      const unsub = firebase
+        .firestore()
+        .collection("presences")
+        .doc(presenceUid)
+        .collection("students")
+        .orderBy("time", "asc")
+        .onSnapshot(
+          (snap) => {
+            if (snap.empty) {
+              setStudentsEmpty(true);
+            } else {
+              setStudentsEmpty(false);
+            }
+            let arr = [];
+            snap.forEach((data) => {
+              arr.push({ ...data.data(), uid: data.id });
+            });
+            if (arr.length == 0) setUserExist(false);
+            setStudents(arr);
+            setButtonClicked(false);
+          },
+          (err) => {
+            console.log("Error : ", err);
+          }
+        );
 
-  // re-run getStudents() when router is ready & students length isn't 0
+      // Cleanup (when presence changed & not authenticated)
+      return () => {
+        unsub();
+        // console.count(`Unsubscribed ${presenceUid}`);
+      };
+    }
+  }, [router, auth]);
+
   useEffect(() => {
-    if (router.isReady && getStudentsStatus) {
-      getStudents();
-    }
-  }, [router.asPath]);
+    if (router.isReady && auth && loaded) {
+      // console.count("countdown()");
+      const countDownDate = new Date(presence.started_at).getTime();
+      let stop = false;
 
+      if (!stop) {
+        const x = setInterval(() => {
+          const now = new Date().getTime();
+          const distance = countDownDate - now;
+
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
+          const minutes = Math.floor(
+            (distance % (1000 * 60 * 60)) / (1000 * 60)
+          );
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          setWaitCountDown(`${days}d, ${hours}h, ${minutes}m, ${seconds}s`);
+          if (distance < 0) {
+            clearInterval(x);
+            stop = true;
+            // console.count("Action enabled");
+            // setStopCountDown(true);
+          }
+
+          // cleanup
+        }, 1000);
+        return () => {
+          clearInterval(x);
+          // setStopCountDown(true);
+          setWaitCountDown(undefined);
+        };
+      }
+    }
+  }, [auth, loaded, new Date(presence.started_at).getTime()]);
+
+  // update setGetStudentsStatus(state) not authenticated
   useEffect(() => {
     if (!auth) {
       setGetStudentsStatus(undefined);
@@ -73,11 +140,16 @@ const presenceUid2 = () => {
   useEffect(() => {
     if (loaded) {
       useCheckIn();
-      if (!stopCountDown) {
-        countdown();
-      }
     }
   }, [loaded]);
+
+  useEffect(() => {
+    if (loaded) {
+      if (!stopCountDown) {
+        // countdown();
+      }
+    }
+  }, [loaded, presence]);
 
   // re-run setUserExist() when auth changed
   useEffect(() => {
@@ -93,7 +165,7 @@ const presenceUid2 = () => {
   }, [students]);
 
   const getPresenceData = async () => {
-    console.count("getPresenceData()");
+    // console.count("getPresenceData()");
     await firebase
       .firestore()
       .collection("presences")
@@ -209,50 +281,50 @@ const presenceUid2 = () => {
       });
   };
 
-  const getStudents = async () => {
-    console.count("getStudents()");
-    const presenceRef = firebase
-      .firestore()
-      .collection("presences")
-      .doc(presenceUid);
-    const studentsRef = presenceRef.collection("students");
+  // const getStudents = async () => {
+  //   console.count("getStudents()");
+  //   const presenceRef = firebase
+  //     .firestore()
+  //     .collection("presences")
+  //     .doc(presenceUid);
+  //   const studentsRef = presenceRef.collection("students");
 
-    presenceRef
-      .get()
-      .then((res) => {
-        if (res.exists) {
-          // Presence exist
-          const unsubscribeStudents = studentsRef
-            .orderBy("time", "asc")
-            .onSnapshot(
-              (snap) => {
-                if (snap.empty) {
-                  setStudentsEmpty(true);
-                } else {
-                  setStudentsEmpty(false);
-                }
-                let arr = [];
-                snap.forEach((data) => {
-                  arr.push({ ...data.data(), uid: data.id });
-                });
-                if (arr.length == 0) setUserExist(false);
-                setStudents(arr);
-                setButtonClicked(false);
-              },
-              (err) => {
-                console.error("Stop listening students");
-                unsubscribeStudents();
-              }
-            );
-        } else {
-          // Presence doesn't exist
-        }
-      })
-      .catch((err) => {
-        console.count(err);
-      });
-    setGetStudentsStatus(true);
-  };
+  //   presenceRef
+  //     .get()
+  //     .then((res) => {
+  //       if (res.exists) {
+  //         // Presence exist
+  //         const unsubscribeStudents = studentsRef
+  //           .orderBy("time", "asc")
+  //           .onSnapshot(
+  //             (snap) => {
+  //               if (snap.empty) {
+  //                 setStudentsEmpty(true);
+  //               } else {
+  //                 setStudentsEmpty(false);
+  //               }
+  //               let arr = [];
+  //               snap.forEach((data) => {
+  //                 arr.push({ ...data.data(), uid: data.id });
+  //               });
+  //               if (arr.length == 0) setUserExist(false);
+  //               setStudents(arr);
+  //               setButtonClicked(false);
+  //             },
+  //             (err) => {
+  //               console.error("Stop listening students");
+  //               unsubscribeStudents();
+  //             }
+  //           );
+  //       } else {
+  //         // Presence doesn't exist
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.count(err);
+  //     });
+  //   setGetStudentsStatus(true);
+  // };
 
   const userExistCheck = () => {
     let userFound = false;
@@ -317,40 +389,40 @@ const presenceUid2 = () => {
     }
   };
 
-  const random = async () => {
-    // console.count("random()");
-    setButtonClicked(true);
-    for (let index = 0; index < 40; index++) {
-      let name = Faker.name.findName();
-      let email = Faker.internet.email();
-      let status = Faker.random.arrayElement(["hadir", "sakit", "izin"]);
-      let uid = Faker.random.alphaNumeric(9);
+  // const random = async () => {
+  //   // console.count("random()");
+  //   setButtonClicked(true);
+  //   for (let index = 0; index < 40; index++) {
+  //     let name = Faker.name.findName();
+  //     let email = Faker.internet.email();
+  //     let status = Faker.random.arrayElement(["hadir", "sakit", "izin"]);
+  //     let uid = Faker.random.alphaNumeric(9);
 
-      await firebase
-        .firestore()
-        .collection("presences")
-        .doc(presenceUid)
-        .collection("students")
-        .doc(uid)
-        .set({
-          name: name,
-          email: email,
-          time: new Date().getTime(),
-          status: status,
-        })
-        .then(() => {
-          console.count(true);
-        })
-        .catch(() => {
-          Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: "Something went wrong !",
-          });
-        });
-    }
-    setButtonClicked(false);
-  };
+  //     await firebase
+  //       .firestore()
+  //       .collection("presences")
+  //       .doc(presenceUid)
+  //       .collection("students")
+  //       .doc(uid)
+  //       .set({
+  //         name: name,
+  //         email: email,
+  //         time: new Date().getTime(),
+  //         status: status,
+  //       })
+  //       .then(() => {
+  //         console.count(true);
+  //       })
+  //       .catch(() => {
+  //         Swal.fire({
+  //           icon: "error",
+  //           title: "Oops...",
+  //           text: "Something went wrong !",
+  //         });
+  //       });
+  //   }
+  //   setButtonClicked(false);
+  // };
 
   const getStatus = (status) => {
     // console.log("getStatus()");
@@ -406,33 +478,33 @@ const presenceUid2 = () => {
     };
   };
 
-  const countdown = () => {
-    // console.count("countdown()");
-    const countDownDate = new Date(presence.started_at).getTime();
-    let stop = false;
+  // const countdown = () => {
+  //   console.count("countdown()");
+  //   const countDownDate = new Date(presence.started_at).getTime();
+  //   let stop = false;
 
-    if (!stop) {
-      const x = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = countDownDate - now;
+  //   if (!stop) {
+  //     const x = setInterval(() => {
+  //       const now = new Date().getTime();
+  //       const distance = countDownDate - now;
 
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  //       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  //       const hours = Math.floor(
+  //         (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  //       );
+  //       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  //       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        setWaitCountDown(`${days}d, ${hours}h, ${minutes}m, ${seconds}s`);
-        if (distance < 0) {
-          clearInterval(x);
-          stop = true;
-          // console.count("Action enabled");
-          setStopCountDown(true);
-        }
-      }, 1000);
-    }
-  };
+  //       setWaitCountDown(`${days}d, ${hours}h, ${minutes}m, ${seconds}s`);
+  //       if (distance < 0) {
+  //         clearInterval(x);
+  //         stop = true;
+  //         // console.count("Action enabled");
+  //         setStopCountDown(true);
+  //       }
+  //     }, 1000);
+  //   }
+  // };
 
   const useCheckIn = () => {
     // console.count("useCheckIn()");
@@ -460,12 +532,118 @@ const presenceUid2 = () => {
               })
               .then(() => {
                 setUserCheckinStatus(true);
-                console.count("Visiting this presence");
+                // console.count("Visiting this presence");
               })
               .catch((err) => {
                 console.count(err);
               });
+            logs.store(
+              activeUser?.uid,
+              `${activeUser?.displayName} just visiting presence : ${presenceUid}`
+            );
           }
+        });
+      }
+    }
+  };
+
+  const deletePresence = async () => {
+    let check = false;
+    await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#0284C7",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Swal.fire("Deleted!", "Your file has been deleted.", "success");
+        check = true;
+      }
+    });
+
+    const deleteStudentsProcess = () => {
+      return firebase
+        .firestore()
+        .collection("presences")
+        .doc(presenceUid)
+        .collection("students")
+        .get();
+    };
+
+    const deletePresenceProcess = () => {
+      return firebase
+        .firestore()
+        .collection("presences")
+        .doc(presenceUid)
+        .delete();
+    };
+
+    const deleteVisitedPresenceProcess = () => {
+      return firebase
+        .firestore()
+        .collection("users")
+        .doc(activeUser?.uid)
+        .collection("visitedPresences")
+        .doc(presenceUid)
+        .delete();
+    };
+
+    let presenceDeleted, visitedPresenceDeleted;
+    if (check) {
+      setButtonClicked(true);
+      try {
+        const deletingStudents = await deleteStudentsProcess();
+        deletingStudents.forEach((data) => {
+          firebase
+            .firestore()
+            .collection("presences")
+            .doc(presenceUid)
+            .collection("students")
+            .doc(data.id)
+            .delete();
+        });
+      } catch (error) {
+        console.log(error);
+      }
+
+      try {
+        const deletingPresence = await deletePresenceProcess();
+        // console.log("Presence deleted");
+        presenceDeleted = true;
+      } catch (error) {
+        presenceDeleted = false;
+        // console.log(error);
+      }
+
+      try {
+        const deletingVisitedPresences = await deleteVisitedPresenceProcess();
+        // console.log("Visited presence deleted");
+        visitedPresenceDeleted = true;
+      } catch (error) {
+        presenceDeleted = false;
+        // console.log(error);
+      }
+
+      if (presenceDeleted && visitedPresenceDeleted) {
+        // setButtonClicked(false);
+        await logs.store(
+          activeUser?.uid,
+          `${activeUser?.displayName} just deleting presence with the entire students data : ${presenceUid}`
+        );
+        Swal.fire({
+          icon: "success",
+          title: "Good",
+          text: "Presence and the students was deleted !",
+        });
+        router.push("/current-presences");
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Something went wrong !",
         });
       }
     }
@@ -486,20 +664,63 @@ const presenceUid2 = () => {
                 className={`max-w-5xl md:pb-10 md:pt-20 mx-auto pb-4 pt-16 px-4 ${Css.heightFull}`}
                 id="notPassed"
               >
-                <h1
-                  className="break-words font-semibold leading-none line-clamp-2 md:pt-0 pt-2 text-2xl text-cool-gray-600"
-                  id="schoolAndClass"
-                >
-                  {school} - {classes}
-                </h1>
+                <div className="flex items-baseline justify-between relative">
+                  <h1
+                    className="break-words font-semibold leading-none line-clamp-2 md:pt-0 pt-2 text-2xl text-cool-gray-600"
+                    id="schoolAndClass"
+                  >
+                    {school} - {classes}
+                  </h1>
+                  {presence?.userId == activeUser?.uid ? (
+                    <div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        height="24px"
+                        viewBox="0 0 24 24"
+                        width="24px"
+                        fill="currentColor"
+                        className="-mr-2.5 cursor-pointer flex-none hover:text-cool-gray-700 text-cool-gray-600"
+                        onClick={() => setOption(!option)}
+                      >
+                        <path d="M0 0h24v24H0V0z" fill="none" />
+                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                      </svg>
+                      <div
+                        id="option"
+                        className={`absolute bg-white border ${
+                          option ? "flex flex-col" : "hidden"
+                        } md:w-1/6 p-2 right-4 rounded-md shadow-md w-2/4 focus:outline-none mt-2.5 md:mt-1 md:mr-2 px-3.5 top-0`}
+                      >
+                        <Link href={`/${presenceUid}/edit`}>
+                          <a className="hover:text-cool-gray-700 text-cool-gray-600">
+                            Edit
+                          </a>
+                        </Link>
+                        <span
+                          className="hover:text-cool-gray-700 text-cool-gray-600 cursor-pointer"
+                          onClick={() => deletePresence()}
+                        >
+                          Delete
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    ""
+                  )}
+                </div>
                 <h2
                   className="font-thin line-clamp-1 text-base text-cool-gray-600"
                   id="lesson"
                 >
-                  {lesson}
+                  <span>{lesson}</span>
+                  <span> with </span>
+                  <span className="break-words capitalization font-semibold">
+                    {presence.lecturer}
+                  </span>
                 </h2>
                 <small className="flex font-thin text-cool-gray-600">
                   <span className="min-w-max">
+                    <span>Created </span>
                     <RealtimeMoment
                       moment={presence.created_at.toDate()}
                       name="created_at"
@@ -511,7 +732,7 @@ const presenceUid2 = () => {
                   </span>
                 </small>
                 <small className="flex font-thin text-cool-gray-600">
-                  <span>Deadline</span>
+                  <span>Expired</span>
                   <span className="font-medium ml-1 text-red-600">
                     <RealtimeMoment
                       moment={presence.deadline}
@@ -590,12 +811,12 @@ const presenceUid2 = () => {
                         </div>
                       ) : (
                         <div
-                          className="h-full md:mb-4 md:ml-4 md:mt-0 md:order-last mt-5 rounded-md text-center text-white"
+                          className="h-full md:mb-4 md:ml-4 md:order-last mt-5 rounded-md text-center text-white"
                           id="action"
                         >
                           {userExist ? (
                             <>
-                              {activeUser?.uid == presence?.userId ? (
+                              {/* {activeUser?.uid == presence?.userId ? (
                                 <button
                                   className="disabled:cursor-not-allowed disabled:opacity-60 bg-cool-gray-500 cursor-pointer font-semibold hover:bg-cool-gray-600 mb-2 mt-2 p-1 rounded-md w-full"
                                   onClick={() => random()}
@@ -605,9 +826,9 @@ const presenceUid2 = () => {
                                 </button>
                               ) : (
                                 ""
-                              )}
+                              )} */}
                               <button
-                                className="disabled:cursor-not-allowed bg-cool-gray-500 disabled:opacity-60 cursor-pointer font-semibold hover:bg-cool-gray-600 mt-2 p-1 rounded-md w-full"
+                                className="bg-cool-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 font-semibold hover:bg-cool-gray-600 md:mt-2 p-1 rounded-md w-full"
                                 onClick={() => cancel()}
                                 disabled={buttonClicked}
                               >
@@ -617,7 +838,7 @@ const presenceUid2 = () => {
                           ) : (
                             <div>
                               <button
-                                className="disabled:cursor-not-allowed bg-light-blue-500 cursor-pointer disabled:opacity-60 font-semibold hover:bg-light-blue-600 mb-2 p-1 rounded-md w-full"
+                                className="bg-light-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 font-semibold hover:bg-light-blue-600 mb-2 md:mt-2 p-1 rounded-md w-full"
                                 onClick={() => addAndCheck("hadir")}
                                 disabled={buttonClicked}
                               >
@@ -710,7 +931,10 @@ const presenceUid2 = () => {
                 id="passed"
                 className={`max-w-5xl md:py-10 mx-auto px-4 py-4 ${Css.heightFull}`}
               >
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="md:mt-10 mt-14"
+                >
                   <div id="password" className="mb-4">
                     <label htmlFor="password">Password</label>
                     <input
@@ -741,4 +965,4 @@ const presenceUid2 = () => {
   );
 };
 
-export default presenceUid2;
+export default ShowPresences;

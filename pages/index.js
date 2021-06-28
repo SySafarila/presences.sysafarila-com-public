@@ -16,22 +16,22 @@ const Home = () => {
         >
           <div
             id="jumbotron"
-            className="md:pt-0 mt-1 pt-2 relative text-center"
+            className="h-40 md:h-80 md:pt-0 mt-1 pt-2 relative text-center"
           >
             <img
-              src="https://demo.athemes.com/sydney/wp-content/uploads/sites/103/2019/12/Slider_image-1.png"
+              src="/photos/marvin-meyer-SYTO3xs06fU-unsplash.jpg"
               alt="Jumbotron"
-              className="w-full rounded-br-md rounded-tl-md"
+              className="blur-xs filter h-full object-cover rounded-br-md rounded-tl-md w-full"
             />
             <div
               className={`absolute top-2/4 left-2/4 transform -translate-x-2/4 -translate-y-2/4 text-white ${Font.fraunces}`}
             >
               <h1 className="mb-2 md:mb-9 md:text-6xl text-xl">Welcome To</h1>
               <h2 className="flex mb-2 md:mb-9 md:text-4xl text-xl whitespace-nowrap">
-                <span className="bg-cool-gray-500 bg-opacity-80 pb-1 px-1 rounded-tl-sm">
+                <span className="bg-cool-gray-500 bg-opacity-50 pb-1 px-1 rounded-tl-sm">
                   Presences by
                 </span>
-                <span className="bg-white pb-1 px-1 rounded-br-sm text-gray-600">
+                <span className="bg-opacity-80 bg-white pb-1 px-1 rounded-br-sm text-gray-600">
                   SySafarila
                 </span>
               </h2>
@@ -79,7 +79,7 @@ const Home = () => {
             className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-10 mt-10 items-center"
           >
             <img
-              src="https://justorganized.com/wp-content/uploads/2015/09/business-organizing-services.jpg"
+              src="/photos/kelly-sikkema-jr61kHaWKek-unsplash.jpg"
               alt="Organized"
               className="rounded-br-md rounded-tl-md"
             />
@@ -126,7 +126,7 @@ const Home = () => {
               </p>
             </div>
             <img
-              src="https://lh3.googleusercontent.com/_i1Cv4t3Emlh_LbkZGxeclQiUOS0DL_jaYYvxM_KG149l106NxqyV1hMqeQdkDVaytkRM9yPLf8zRsDxq_-DG7TTwhUOzsFrgorrqg=w688-v1"
+              src="/photos/bill-oxford--fGqsewtsJY-unsplash.jpg"
               alt="Learning"
               className="rounded-bl-md rounded-tr-md"
             />

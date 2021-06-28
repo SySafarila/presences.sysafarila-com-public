@@ -25,6 +25,11 @@ export const VisitedPresences = atom({
   default: [],
 });
 
+export const VisitedPresencesLoaded = atom({
+  key: "VisitedPresencesLoaded",
+  default: false,
+});
+
 export const ShowSidebar = atom({
   key: "ShowSidebar",
   default: false,

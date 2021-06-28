@@ -105,7 +105,14 @@ const CurrentPresences = () => {
                 <span className="text-cool-gray-500">Loading...</span>
               )}
               {notFound ? (
-                <p className="text-cool-gray-500">Data not found</p>
+                <p className="text-cool-gray-500">
+                  <span>You don't have any presences here, </span>
+                  <Link href="/create">
+                    <a className="hover:text-blue-700 text-blue-600">
+                      Create here
+                    </a>
+                  </Link>
+                </p>
               ) : (
                 ""
               )}

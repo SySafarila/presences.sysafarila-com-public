@@ -73,6 +73,7 @@ const AuthController = () => {
       .then(() => {
         // console.log("Logout successfully");
         setAuth(false);
+        setAdmin(undefined);
         setUser(undefined);
         Swal.fire({
           icon: "success",

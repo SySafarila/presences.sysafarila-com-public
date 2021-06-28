@@ -7,12 +7,16 @@ module.exports = {
     extend: {
       colors: {
         blue: colors.blue,
-        "light-blue": colors.lightBlue,
+        // "light-blue": colors.lightBlue,
+        "light-blue": colors.sky,
         "cool-gray": colors.coolGray,
         "blue-gray": colors.blueGray,
         rose: colors.rose,
         teal: colors.teal,
         "light-yellow": colors.yellow,
+      },
+      blur: {
+        xs: "2px",
       },
     },
   },

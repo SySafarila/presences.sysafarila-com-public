@@ -10,13 +10,15 @@ import { useState } from "react";
 import Css from "../../styles/CustomCss.module.css";
 import Swal from "sweetalert2";
 import { useRouter } from "next/router";
+import LogsController from "../../components/LogsController";
 
 const Create = () => {
   const [bypass, setBypass] = useState(false);
   const [button, setButton] = useState(true);
   const user = useRecoilValue(UserState);
-  const { register, handleSubmit, watch, errors } = useForm();
+  const { register, handleSubmit } = useForm();
   const router = useRouter();
+  const logs = LogsController();
 
   const onSubmit = async (data) => {
     setButton(false);
@@ -37,15 +39,17 @@ const Create = () => {
           deadline: parseInt(new Date(data.deadline).getTime()),
           started_at: parseInt(new Date(data.started_at).getTime()),
         })
-        .then((res) => {
-          // console.log(res.id);
+        .then(async (res) => {
+          await logs.store(
+            user?.uid,
+            `${user?.displayName} just creating presence : ${res.id}`
+          );
           Swal.fire({
             icon: "success",
             title: "Good",
             text: "Presences successfully created !",
           });
           router.push(`/${res.id}`);
-          // setButton(true);
         })
         .catch((err) => {
           Swal.fire({
@@ -69,15 +73,17 @@ const Create = () => {
           deadline: parseInt(new Date(data.deadline).getTime()),
           started_at: parseInt(new Date(data.started_at).getTime()),
         })
-        .then((res) => {
-          // console.log(res.id);
+        .then(async (res) => {
+          await logs.store(
+            user?.uid,
+            `${user?.displayName} just creating presence : ${res.id}`
+          );
           Swal.fire({
             icon: "success",
             title: "Good",
             text: "Presences successfully created !",
           });
           router.push(`/${res.id}`);
-          // setButton(true);
         })
         .catch((err) => {
           Swal.fire({
@@ -184,23 +190,7 @@ const Create = () => {
                     className="border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
                   />
                 </div>
-                {/* <div>
-                  <label
-                    htmlFor="end_at"
-                    className="block text-cool-gray-600 font-medium"
-                  >
-                    End at
-                  </label>
-                  <input
-                    type="date"
-                    name="end_at"
-                    id="end_at"
-                    ref={register({ required: true })}
-                    className="border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
-                  />
-                </div> */}
                 <div>
-                  {/* <div id="date" className="flex-grow mr-2"> */}
                   <label
                     htmlFor="deadline"
                     className="block text-cool-gray-600 font-medium"
@@ -208,20 +198,6 @@ const Create = () => {
                     Deadline
                   </label>
                   <div className="flex">
-                    {/* <input
-                      type="date"
-                      name="deadline"
-                      id="deadline"
-                      ref={register({ required: true })}
-                      className="mr-2 border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
-                    />
-                    <input
-                      type="time"
-                      name="hour"
-                      id="hour"
-                      ref={register({ required: true })}
-                      className="ml-2 border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
-                    /> */}
                     <input
                       type="datetime-local"
                       name="deadline"
@@ -230,22 +206,6 @@ const Create = () => {
                       className="ml-2 border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
                     />
                   </div>
-                  {/* </div> */}
-                  {/* <div id="time" className="flex-grow ml-2"> */}
-                  {/* <label
-                      htmlFor="hour"
-                      className="block text-cool-gray-600 font-medium"
-                    >
-                      Time
-                    </label> */}
-                  {/* <input
-                      type="time"
-                      name="hour"
-                      id="hour"
-                      ref={register({ required: true })}
-                      className="border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
-                    /> */}
-                  {/* </div> */}
                 </div>
                 <div>
                   <label
@@ -260,10 +220,9 @@ const Create = () => {
                     id="password"
                     ref={register({ required: true })}
                     className="border mt-2 py-2 px-2.5 w-full rounded-br-md rounded-tl-md text-cool-gray-600 focus:border-cool-gray-400 focus:outline-none bg-white"
-                    // disabled={bypass}
                     placeholder="Your secret key"
                   />
-                  <div className="flex items-center mt-2">
+                  <div className="flex items-baseline mt-2">
                     <input
                       type="checkbox"
                       name="bypass"
@@ -274,9 +233,13 @@ const Create = () => {
                     />
                     <label
                       htmlFor="bypass"
-                      className="text-cool-gray-500 select-none"
+                      className="flex flex-col select-none text-cool-gray-500"
                     >
-                      Disable password when join
+                      <span>Set visibility to Public</span>
+                      <small className="text-red-600">
+                        Password still required, but User can skip Password
+                        Checker when join this presence
+                      </small>
                     </label>
                   </div>
                 </div>

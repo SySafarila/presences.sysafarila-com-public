@@ -7,6 +7,7 @@ import {
   ShowSidebar,
   UserState,
   VisitedPresences,
+  VisitedPresencesLoaded,
 } from "./recoil/Store";
 import AuthController from "../components/auth/AuthController";
 import { useEffect, useState } from "react";
@@ -20,9 +21,8 @@ const Navbar = () => {
   const user = useRecoilValue(UserState);
   const auth = useRecoilValue(AuthState);
   const admin = useRecoilValue(AdminState);
-  const [visitedPresences, setVisitedPresences] =
-    useRecoilState(VisitedPresences);
-  const [visitedLoaded, setVisitedLoaded] = useState(false);
+  const visitedPresences = useRecoilValue(VisitedPresences);
+  const visitedLoaded = useRecoilValue(VisitedPresencesLoaded);
   const [popup, setPopup] = useState(false);
   const [showSidebar, setShowSidebar] = useRecoilState(ShowSidebar);
 
@@ -31,7 +31,7 @@ const Navbar = () => {
 
   useEffect(() => {
     setPopup(false);
-    getVisitedPresences();
+    // getVisitedPresences();
   }, [auth]);
 
   useEffect(() => {
@@ -54,31 +54,32 @@ const Navbar = () => {
     }
   };
 
-  const getVisitedPresences = () => {
-    if (auth) {
-      firebase
-        .firestore()
-        .collection("users")
-        .doc(user.uid)
-        .collection("visitedPresences")
-        .orderBy("created_at", "desc")
-        .limit(21)
-        .onSnapshot((snap) => {
-          let arr = [];
-          snap.forEach((data) => {
-            arr.push({
-              ...data.data(),
-              uid: data.id,
-            });
-          });
-          setVisitedPresences(arr);
-          setVisitedLoaded(true);
-        });
-    } else {
-      setVisitedPresences([]);
-      setVisitedLoaded(false);
-    }
-  };
+  // const getVisitedPresences = () => {
+  //   if (auth) {
+  //     console.count("getVisitedPresences()");
+  //     firebase
+  //       .firestore()
+  //       .collection("users")
+  //       .doc(user.uid)
+  //       .collection("visitedPresences")
+  //       .orderBy("created_at", "desc")
+  //       .limit(21)
+  //       .onSnapshot((snap) => {
+  //         let arr = [];
+  //         snap.forEach((data) => {
+  //           arr.push({
+  //             ...data.data(),
+  //             uid: data.id,
+  //           });
+  //         });
+  //         setVisitedPresences(arr);
+  //         setVisitedLoaded(true);
+  //       });
+  //   } else {
+  //     setVisitedPresences([]);
+  //     setVisitedLoaded(false);
+  //   }
+  // };
 
   const sidebarToggle = () => {
     const body = document.querySelector("body");
@@ -273,7 +274,14 @@ const Navbar = () => {
         {auth ? (
           visitedLoaded ? (
             visitedPresences?.length == 0 ? (
-              <p className="px-5">You dont have any visited Presences.</p>
+              <p className="px-5">
+                <span>You dont have any visited Presences. </span>
+                <Link href="/create">
+                  <a className="hover:text-blue-700 text-blue-600">
+                    Create here
+                  </a>
+                </Link>
+              </p>
             ) : (
               <>
                 {visitedPresences?.map((data) => (
@@ -281,7 +289,7 @@ const Navbar = () => {
                     key={data.uid}
                     onClick={() => setTimeout(() => sidebarToggle(), 1000)}
                   >
-                    <Link href={data.uid}>
+                    <Link href={`/${data.uid}`}>
                       <a>
                         <div
                           className={`cursor-pointer hover:bg-cool-gray-100 px-5 py-2 ${
@@ -316,7 +324,15 @@ const Navbar = () => {
             <p className="px-5">Loading...</p>
           )
         ) : (
-          <p className="px-5">Login with your Google account.</p>
+          <p className="px-5">
+            <span>Login with your Google account. </span>
+            <span
+              className="hover:text-blue-700 text-blue-600 cursor-pointer"
+              onClick={() => Auth.login()}
+            >
+              Login
+            </span>
+          </p>
         )}
       </div>
     </>

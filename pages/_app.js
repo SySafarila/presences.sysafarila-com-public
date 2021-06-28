@@ -1,14 +1,14 @@
 // import '../styles/globals.css'
 import { RecoilRoot } from "recoil";
 import "tailwindcss/tailwind.css";
-import UserContainer from "../components/UserContainer";
+import Container from "../components/Container";
 
 function MyApp({ Component, pageProps }) {
   return (
     <RecoilRoot>
-      <UserContainer>
+      <Container>
         <Component {...pageProps} />
-      </UserContainer>
+      </Container>
     </RecoilRoot>
   );
 }
